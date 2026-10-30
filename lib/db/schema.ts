@@ -432,3 +432,49 @@ export type InsertSetting = z.infer<typeof insertSettingSchema>
 export const userConnections = accounts
 export type UserConnection = Account
 export type InsertUserConnection = InsertAccount
+
+
+// OAuth-backed inference provider connections. Tokens are encrypted at rest.
+export const providerConnections = pgTable(
+  'provider_connections',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    provider: text('provider', {
+      enum: ['huggingface', 'openrouter', 'cloudflare'],
+    }).notNull(),
+    externalAccountId: text('external_account_id'),
+    displayName: text('display_name'),
+    accessToken: text('access_token').notNull(),
+    refreshToken: text('refresh_token'),
+    expiresAt: timestamp('expires_at'),
+    scope: text('scope'),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+    status: text('status', { enum: ['connected', 'disconnected'] }).notNull().default('connected'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userProviderUnique: uniqueIndex('provider_connections_user_provider_idx').on(table.userId, table.provider),
+  }),
+)
+
+export const selectProviderConnectionSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  provider: z.enum(['huggingface', 'openrouter', 'cloudflare']),
+  externalAccountId: z.string().nullable(),
+  displayName: z.string().nullable(),
+  accessToken: z.string(),
+  refreshToken: z.string().nullable(),
+  expiresAt: z.date().nullable(),
+  scope: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  status: z.enum(['connected', 'disconnected']),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export type ProviderConnection = z.infer<typeof selectProviderConnectionSchema>
