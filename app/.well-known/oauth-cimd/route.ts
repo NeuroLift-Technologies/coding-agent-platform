@@ -7,7 +7,6 @@ export async function GET(request: NextRequest) {
     client_name: 'NeuroLift Coding Agent Platform',
     redirect_uris: [new URL('/api/providers/oauth/huggingface/callback', origin).toString()],
     token_endpoint_auth_method: 'none',
-    logo_uri: new URL('/icon.png', origin).toString(),
     client_uri: origin,
   })
 }
